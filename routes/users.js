@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Joi = require('@hapi/joi');
 
+const User = require('../models/user');
+
 const userSchema = Joi.object().keys({
   email: Joi.string()
     .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net'] } })
@@ -41,19 +43,33 @@ const userSchema = Joi.object().keys({
     }),
 });
 
+// Routes
+
 router
   .route('/register')
+
   .get((req, res) => {
     res.render('register');
   })
-  .post((req, res, next) => {
-    // console.log('req.body:', req.body);
-    const result = userSchema.validate(req.body);
-    console.log('result:', result);
-    if (result.error) {
-      req.flash('error', result.error.details[0].message);
-      console.log('error:', result.error);
-      res.redirect('/users/register');
+
+  .post(async (req, res, next) => {
+    try {
+      // console.log('req.body:', req.body);
+      const result = userSchema.validate(req.body);
+      console.log('result:', result);
+      if (result.error) {
+        req.flash('error', result.error.details[0].message);
+        console.log('error:', result.error);
+        res.redirect('/users/register');
+      }
+      // Checking if email is already taken
+      const user = await User.findOne({ email: result.value.email });
+      if (user) {
+        req.flash('error', 'Email is already in use.');
+        res.redirect('/users/register');
+      }
+    } catch (error) {
+      next(error);
     }
   });
 
