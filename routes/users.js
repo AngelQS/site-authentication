@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Joi = require('@hapi/joi');
 
-const User = require('../models/user');
+const { User, hashPassword } = require('../models/user');
 
 const userSchema = Joi.object().keys({
   email: Joi.string()
@@ -68,6 +68,10 @@ router
         req.flash('error', 'Email is already in use.');
         res.redirect('/users/register');
       }
+
+      // Hash the password
+      const hash = await hashPassword(result.value.password);
+      console.log('hash:', hash);
     } catch (error) {
       next(error);
     }

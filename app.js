@@ -8,7 +8,10 @@ const flash = require('connect-flash');
 const session = require('express-session');
 const mongoose = require('mongoose');
 
-mongoose.connect('mongodb://localhost/site-authentication');
+mongoose.connect('mongodb://localhost/site-authentication', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
 
 const app = express();
 app.use(morgan('dev'));
