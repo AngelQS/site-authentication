@@ -47,6 +47,7 @@ app.use(flash());
 app.use((req, res, next) => {
   res.locals.success_messages = req.flash('success');
   res.locals.error_messages = req.flash('error');
+  res.locals.isAuthenticated = req.user ? true : false;
   next();
 });
 
@@ -58,4 +59,4 @@ app.use((req, res, next) => {
   res.render('notFound');
 });
 
-app.listen(2000, () => console.log('Server started listening on port 2000!'));
+app.listen(3000, () => console.log('Server started listening on port 3000!'));

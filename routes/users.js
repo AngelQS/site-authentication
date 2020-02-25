@@ -44,13 +44,32 @@ const userSchema = Joi.object().keys({
     }),
 });
 
+// Authorization middleware
+const isAuthenticated = (req, res, next) => {
+  if (req.isAuthenticated()) {
+    return next();
+  } else {
+    req.flash('error', 'You must be registered first.');
+    res.redirect('/');
+  }
+};
+
+const isNotAuthenticated = (req, res, next) => {
+  if (req.isAuthenticated()) {
+    req.flash('error', 'You are already logged in.');
+    res.redirect('/');
+  } else {
+    return next();
+  }
+};
+
 // Routes
 
 router
   .route('/register')
 
-  .get((req, res) => {
-    res.render('register');
+  .get(isNotAuthenticated, (req, res) => {
+    res.redirect('/users/register');
   })
 
   .post(async (req, res, next) => {
@@ -97,7 +116,7 @@ router
 
 router
   .route('/login')
-  .get((req, res) => {
+  .get(isNotAuthenticated, (req, res) => {
     res.render('login');
   })
   .post(
@@ -109,7 +128,14 @@ router
   );
 
 router.route('/dashboard').get((req, res) => {
-  res.render('dashboard');
+  console.log('req.user:', req.user);
+  res.render('dashboard', { username: req.user.username });
+});
+
+router.route('/logout').get(isAuthenticated, (req, res) => {
+  req.logOut();
+  req.flash('success', 'You are logged out.');
+  res.redirect('/');
 });
 
 module.exports = router;
