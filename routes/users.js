@@ -28,7 +28,7 @@ const userSchema = Joi.object().keys({
     }),
   password: Joi.string()
     // Expresión de contraseña que requiere una letra minúscula, una letra mayúscula, un dígito, mas de 8 caracteres (editable) de longitud y sin espacios.
-    .regex(/^(?=.*\d)(?=.*[az])(?=.*[AZ])(?!.*\s).{8,}$/)
+    //.regex(/^(?=.*\d)(?=.*[az])(?=.*[AZ])(?!.*\s).{8,}$/)
     .required()
     .messages({
       'string.pattern.base':
@@ -54,24 +54,43 @@ router
 
   .post(async (req, res, next) => {
     try {
-      // console.log('req.body:', req.body);
       const result = userSchema.validate(req.body);
-      console.log('result:', result);
       if (result.error) {
         req.flash('error', result.error.details[0].message);
-        console.log('error:', result.error);
         res.redirect('/users/register');
       }
       // Checking if email is already taken
-      const user = await User.findOne({ email: result.value.email });
-      if (user) {
-        req.flash('error', 'Email is already in use.');
-        res.redirect('/users/register');
-      }
+      const users = await User.find({
+        $or: [
+          { email: result.value.email },
+          { username: result.value.username },
+        ],
+      });
+      users.forEach(async (user) => {
+        if (user.email == result.value.email) {
+          req.flash('error', 'Email is already in use.');
+          res.redirect('/users/register');
+        }
+        if (user.username == result.value.username) {
+          req.flash('error', 'Username is already in use.');
+          res.redirect('/users/register');
+        }
+      });
 
       // Hash the password
       const hash = await hashPassword(result.value.password);
-      console.log('hash:', hash);
+
+      // Save user to database
+      await delete result.value.confirmationPassword; // confirmationPassword is deleted because is not in the user model
+      result.value.password = hash;
+      const newUser = await new User(result.value);
+      //console.log('newUser:', newUser);
+      await newUser.save();
+      req.flash(
+        'success',
+        'You account has been registered successfully. Please check your mail to validate your account.',
+      );
+      res.redirect('/users/login');
     } catch (error) {
       next(error);
     }
