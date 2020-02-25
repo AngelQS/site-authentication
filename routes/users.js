@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const Joi = require('@hapi/joi');
+const passport = require('passport');
 
-const { User, hashPassword } = require('../models/user');
+const User = require('../models/user');
 
 const userSchema = Joi.object().keys({
   email: Joi.string()
@@ -77,14 +78,12 @@ router
         }
       });
 
-      // Hash the password
-      const hash = await hashPassword(result.value.password);
-
       // Save user to database
       await delete result.value.confirmationPassword; // confirmationPassword is deleted because is not in the user model
-      result.value.password = hash;
       const newUser = await new User(result.value);
-      //console.log('newUser:', newUser);
+      // Hash the password
+      newUser.password = await newUser.encryptPassword(result.value.password);
+      console.log('newUser:', newUser);
       await newUser.save();
       req.flash(
         'success',
@@ -96,8 +95,21 @@ router
     }
   });
 
-router.route('/login').get((req, res) => {
-  res.render('login');
+router
+  .route('/login')
+  .get((req, res) => {
+    res.render('login');
+  })
+  .post(
+    passport.authenticate('local', {
+      failureRedirect: '/users/login',
+      successRedirect: '/users/dashboard',
+      failureFlash: true,
+    }),
+  );
+
+router.route('/dashboard').get((req, res) => {
+  res.render('dashboard');
 });
 
 module.exports = router;

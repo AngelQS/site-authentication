@@ -7,6 +7,11 @@ const expressHandlebars = require('express-handlebars');
 const flash = require('connect-flash');
 const session = require('express-session');
 const mongoose = require('mongoose');
+const passport = require('passport');
+
+require('./config/passport');
+
+mongoose.Promise = global.Promise;
 
 mongoose.connect('mongodb://localhost/site-authentication', {
   useNewUrlParser: true,
@@ -33,6 +38,9 @@ app.use(
     resave: false,
   }),
 );
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use(flash());
 
