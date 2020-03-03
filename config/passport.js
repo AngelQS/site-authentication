@@ -34,12 +34,16 @@ passport.use(
         }
         // Check if the password is correct
         const match = await user.matchPassword(password);
-        console.log('match:', match);
-        if (match) {
-          return done(null, user);
-        } else {
+
+        if (!match) {
           return done(null, false, { message: 'Incorrect Password.' });
         }
+
+        // Check if the account has been verified
+        if (!user.active) {
+          return done(null, false, { message: 'You must first verify the email we send you.' });
+        }
+        return done(null, user);
       } catch (error) {
         throw done(error, false);
       }

@@ -8,6 +8,8 @@ const userSchema = new Schema(
     email: String,
     username: String,
     password: String,
+    secretToken: String,
+    active: Boolean,
   },
   { timestamps: true },
 );
@@ -21,7 +23,7 @@ userSchema.methods.encryptPassword = async (password) => {
   }
 };
 
-userSchema.methods.matchPassword = async function(password) {
+userSchema.methods.matchPassword = async function (password) {
   try {
     return await bcrypt.compare(password, this.password);
     console.log('bcrypt.compare:', bcrypt.compare(password, this.password));
